@@ -1,0 +1,659 @@
+# GreenBasket - Project Requirements Document (Final Implementation)
+
+## 1. Executive Summary
+
+GreenBasket is a fully functional farmer-to-consumer online marketplace built with React + Vite frontend and Supabase PostgreSQL backend. The platform enables farmers to list products, customers to discover and purchase fresh goods directly, and admins to oversee approvals and manage the marketplace.
+
+**Project Status**: ✅ Complete & Tested  
+**Deployment Ready**: Yes  
+**Tech Stack**: React 18, TypeScript, Vite, Tailwind CSS, Supabase  
+**Build Time**: ~2 weeks
+
+---
+![alt text](First-sample.png)
+## 2. Problem Statement
+
+- Farmers lack direct access to consumer markets, reducing profit margins
+- Consumers pay premium prices due to middleman markups
+- No centralized platform connecting verified farmers with buyers
+- Traditional markets lack digital discoverability and convenience
+
+**Solution**: GreenBasket provides a direct, transparent, verified marketplace where farmers control pricing and customers get fresh products at fair prices.
+
+---
+
+## 3. Project Objectives
+
+1. ✅ Enable farmers to list, manage, and track their products
+2. ✅ Provide customers with location-based product discovery and ordering
+3. ✅ Ensure admin maintains marketplace integrity through approval workflows
+4. ✅ Implement role-based access control with Supabase Auth
+5. ✅ Manage inventory with automatic stock deduction on order acceptance
+6. ✅ Provide real-time user feedback through notifications and toasts
+
+---
+
+## 4. Target Users
+
+### 4.1 Farmers
+- Small to medium-scale agricultural producers
+- Ages 25-65
+- Basic to intermediate digital literacy
+- Seeking direct consumer access
+
+### 4.2 Customers
+- Urban and semi-urban consumers
+- Ages 18-75
+- Looking for fresh products
+- Prefer convenience and fair pricing
+
+### 4.3 Admin
+- Platform moderators
+- Need oversight and control
+- Ensure quality and verification
+
+---
+
+## 5. User Roles & Permissions
+
+### 5.1 Farmer
+- ✅ Register/Login with email and password
+- ✅ Submit farmer application with farm details and location
+- ✅ Create products with name, price, description, category, image, and stock in kg
+- ✅ Edit existing products
+- ✅ Delete products
+- ✅ View own product listings with approval status
+- ✅ See pending, approved, and rejected products
+- ✅ Accept/Reject customer orders
+- ✅ View orders placed for their products
+- ✅ Monitor real-time stock levels
+
+### 5.2 Customer
+- ✅ Register/Login with email and password
+- ✅ Browse all approved products from verified farmers
+- ✅ Search products by name (real-time search with Enter key)
+- ✅ Filter products by location (with location search)
+- ✅ View product details including location, price, stock availability
+- ✅ Add products to cart
+- ✅ Remove items from cart
+- ✅ Update item quantities in cart
+- ✅ Proceed to checkout
+- ✅ Place orders
+- ✅ See order confirmation
+- ✅ Cart clears automatically after order placement
+- ❌ No order history/tracking page (as per original PRD requirement)
+
+### 5.3 Admin
+- ✅ Auto-login capability (for admin access)
+- ✅ Approve/Reject farmer account applications
+- ✅ Approve/Reject farmer products
+- ✅ View all registered users with filters
+- ✅ View all orders placed in the marketplace
+- ✅ View order details and item breakdowns
+- ✅ Monitor product statuses across all farmers
+- ✅ Manage farmer verification
+
+---
+
+## 6. Core Features
+
+### 6.1 Authentication & Authorization
+- ✅ Email/password based authentication via Supabase Auth
+- ✅ Role-based access control (RBAC): Farmer, Customer, Admin
+- ✅ Secure JWT tokens
+- ✅ Protected routes based on user role
+- ✅ User profile management
+- ✅ City/Location field in user profiles
+
+### 6.2 Farmer Dashboard
+- ✅ Product management (CRUD operations)
+- ✅ Product approval workflow: pending → approved/rejected
+- ✅ Image upload and storage
+- ✅ Order management interface
+- ✅ Real-time stock display in kg
+- ✅ Order acceptance/rejection functionality
+- ✅ Delete orders capability
+
+### 6.3 Customer Marketplace
+- ✅ Product browsing with grid layout
+- ✅ Real-time search by product name
+- ✅ Location-based filtering
+- ✅ Product cards showing: name, price, location (with 📍 icon), stock in kg
+- ✅ Add-to-cart functionality
+- ✅ Shopping cart management
+- ✅ Checkout process
+- ✅ Order placement with customer email
+
+### 6.4 Admin Dashboard
+- ✅ Farmer applications approval/rejection
+- ✅ Product approval/rejection
+- ✅ User management interface
+- ✅ Order viewing and details
+- ✅ All products overview
+- ✅ Dashboard statistics and monitoring
+
+### 6.5 Cart System
+- ✅ Add items to cart
+- ✅ Remove items from cart
+- ✅ Update item quantities
+- ✅ Real-time cart total calculation
+- ✅ Auto-clear cart after successful order
+- ✅ Display available stock per item
+
+### 6.6 Stock Management
+- ✅ Display stock quantity in kg
+- ✅ Automatic stock deduction when order accepted
+- ✅ Prevent stock from going negative
+- ✅ Real-time stock availability in marketplace
+- ✅ Stock validation before order placement
+
+### 6.7 Notification System
+- ✅ Toast notifications for user actions (success, error, info)
+- ✅ Custom Alert modals for confirmations
+- ✅ Form validation feedback
+- ✅ Order action confirmations
+
+---
+
+## 7. Functional Requirements
+
+### 7.1 Product Module
+
+**Product Schema**:
+```
+{
+  id: UUID (primary key)
+  name: TEXT (required)
+  price: DECIMAL (required)
+  description: TEXT (optional)
+  category: TEXT (required)
+  image_url: TEXT (optional)
+  stock_quantity: INTEGER (default: 0, in kg)
+  created_by: UUID (farmer ID reference)
+  status: TEXT (pending|approved|rejected)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+```
+
+**Product Lifecycle**:
+1. Farmer creates product (status: pending)
+2. Admin reviews and approves/rejects
+3. Approved products visible in marketplace
+4. Stock reduces when orders accepted
+5. Farmer can edit/delete (pending status ideally, but UI allows anytime)
+
+### 7.2 Order Module
+
+**Order Schema**:
+```
+{
+  id: UUID (primary key)
+  customer_id: UUID (customer reference)
+  customer_email: TEXT
+  total_price: DECIMAL
+  status: TEXT (pending|accepted|rejected)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+}
+```
+
+**Order Items Schema**:
+```
+{
+  id: UUID
+  order_id: UUID (reference)
+  product_id: UUID (reference)
+  quantity: INTEGER (in kg)
+  price_at_purchase: DECIMAL
+  name: TEXT
+  image_url: TEXT
+}
+```
+
+**Order Lifecycle**:
+1. Customer places order (status: pending)
+2. Farmer receives order notification
+3. Farmer accepts order → stock deducted automatically
+4. OR Farmer rejects order → stock unchanged
+5. Customer sees final status (no tracking page)
+
+### 7.3 Farmer Application Module
+
+**Application Schema**:
+```
+{
+  id: UUID
+  user_id: UUID
+  farm_address: JSONB {
+    city: TEXT
+    address: TEXT
+  }
+  status: TEXT (pending|approved|rejected)
+  created_at: TIMESTAMP
+}
+```
+
+**Application Workflow**:
+1. New farmer registers (status: pending)
+2. Admin reviews and approves/rejects
+3. Approved farmers can create products
+4. Location synced to user profile on approval
+
+### 7.4 User/Profile Module
+
+**Profile Schema**:
+```
+{
+  id: UUID (from auth.users)
+  email: TEXT
+  role: TEXT (farmer|customer|admin)
+  status: TEXT (pending|approved|rejected)
+  city: TEXT (farmer/customer location)
+  created_at: TIMESTAMP
+}
+```
+
+---
+
+## 8. Non-Functional Requirements
+
+| Requirement | Implementation |
+|---|---|
+| **Performance** | Sub-second product search, optimized queries with indexes |
+| **Scalability** | Supabase handles auto-scaling; no session limits |
+| **Security** | RLS policies on all tables, JWT auth, SQL injection prevention |
+| **Usability** | Intuitive UI, role-based views, clear feedback |
+| **Reliability** | Error handling, try-catch blocks, graceful degradation |
+| **Maintainability** | TypeScript, component-based architecture, clear function signatures |
+| **Data Integrity** | Cascade deletes, transaction-like order processing |
+| **Accessibility** | Semantic HTML, proper contrast, keyboard navigation |
+
+---
+
+## 9. Technical Architecture
+
+### 9.1 Frontend Stack
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite (fast HMR, optimized bundles)
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **State Management**: Context API (7 contexts)
+  - AuthContext (user, role, auth state)
+  - CartContext (items, quantities, totals)
+  - ToastContext (notifications)
+  - NotificationContext (alerts)
+  - ConfirmContext (confirmation modals)
+  - AlertContext (alert modals)
+  - Plus Auth provider
+
+### 9.2 Backend Stack
+- **Database**: Supabase PostgreSQL
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage (product images)
+- **API**: Auto-generated REST API + TypeScript client
+- **Security**: Row Level Security (RLS) policies
+
+### 9.3 Hosting
+- **Frontend**: Ready for Vercel/Netlify deployment
+- **Backend**: Hosted on Supabase cloud
+- **Images**: Supabase CDN
+
+### 9.4 Project Structure
+```
+green-basket/
+├── src/
+│   ├── components/
+│   │   └── Navbar.tsx
+│   ├── context/
+│   │   ├── AuthContext.tsx
+│   │   ├── CartContext.tsx
+│   │   ├── ToastContext.tsx
+│   │   ├── NotificationContext.tsx
+│   │   ├── ConfirmContext.tsx
+│   │   └── AlertContext.tsx
+│   ├── pages/
+│   │   ├── admin/
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── FarmerApplications.tsx
+│   │   ├── customer/
+│   │   │   ├── Cart.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── Marketplace.tsx
+│   │   ├── farmer/
+│   │   │   └── Dashboard.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   └── FarmerSubmission.tsx
+│   ├── services/
+│   │   ├── api.ts (all API calls)
+│   │   └── supabase.ts (Supabase client)
+│   ├── db/
+│   │   └── migrations/ (SQL schema files)
+│   ├── App.tsx
+│   ├── index.tsx
+│   ├── types.ts
+│   └── index.html
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── tailwind.config.js
+```
+
+---
+
+## 10. Key Features Deep-Dive
+
+### 10.1 Location-Based Discovery
+- Farmers specify location (city) during registration
+- Products display farmer's location with 📍 emoji
+- Customers can search/filter products by location
+- Real-time location search without page reload
+- Location saved to both profiles and farmer applications tables
+
+### 10.2 Stock Management with Kg Units
+- All stock quantities displayed in kg (kilograms)
+- Farmer sees stock input labeled "Stock (kg)"
+- Customers see "X kg available" on product cards
+- Stock automatically deducts when farmer accepts order
+- Prevents overselling (stock never goes negative)
+- Real-time stock updates across all views
+
+### 10.3 Order Processing Pipeline
+1. **Customer Places Order**: Creates order record + order_items
+2. **Farmer Receives**: Notification in their dashboard
+3. **Farmer Accepts**: 
+   - Stock deducted for all items
+   - Order status → accepted
+   - Toast confirmation shown
+4. **Farmer Rejects**: Order status → rejected (stock unchanged)
+5. **Cart Clears**: Automatic after successful order
+
+### 10.4 Farmer Application Workflow
+1. New farmer registers with farm details
+2. Application saved with pending status
+3. Admin reviews in "Farmer Applications" view
+4. Approval: City saved to profile, farmer can now create products
+5. Rejection: Application rejected, farmer notified
+
+### 10.5 Product Approval Workflow
+1. Farmer creates product (pending status)
+2. Admin reviews in "Products" section
+3. Approval: Product visible to customers
+4. Rejection: Product hidden, removed from marketplace
+
+---
+
+## 11. Security Measures
+
+### 11.1 Authentication
+- Supabase Auth with JWT tokens
+- Secure password hashing
+- Session management
+- Email verification capability
+
+### 11.2 Authorization
+- Row Level Security (RLS) on all tables
+- Farmers can only access their own products
+- Customers can only access their own cart/orders
+- Admin has full visibility with role checks
+
+### 11.3 Data Protection
+- SQL injection prevention (parameterized queries via Supabase client)
+- XSS prevention (React escaping)
+- CSRF protection via Supabase
+- Secure image uploads with storage rules
+
+### 11.4 API Security
+- Error messages don't expose internal structure
+- Graceful error handling with try-catch
+- Validation on both frontend and backend tables
+
+---
+
+## 12. Database Schema Overview
+
+### 12.1 Core Tables
+
+**auth.users** (Supabase managed)
+- id, email, created_at, email_confirmed_at, etc.
+
+**profiles**
+- id (UUID), email, role, status, city, created_at
+
+**farmer_applications**
+- id, user_id, farm_address (JSONB with city), status, created_at
+
+**products**
+- id, name, price, description, category, image_url, stock_quantity, created_by, status, created_at, updated_at
+
+**orders**
+- id, customer_id, customer_email, total_price, status, created_at, updated_at
+
+**order_items**
+- id, order_id, product_id, quantity, price_at_purchase, name, image_url
+
+### 12.2 Key Relationships
+```
+auth.users (1) ──→ (∞) profiles
+auth.users (1) ──→ (∞) farmer_applications
+auth.users (1) ──→ (∞) products (created_by)
+auth.users (1) ──→ (∞) orders (customer_id)
+products (1) ──→ (∞) order_items
+orders (1) ──→ (∞) order_items
+```
+
+---
+
+## 13. API Functions (services/api.ts)
+
+### Authentication
+- `signUp(email, password, role)` - Register new user
+- `login(email, password)` - Login user
+- `logout()` - Logout user
+- `getCurrentUser()` - Get current session
+
+### Farmer Operations
+- `createProduct(data)` - Create new product
+- `updateProduct(id, data)` - Update product
+- `deleteProduct(id)` - Delete product
+- `getFarmerProducts()` - Get farmer's products
+- `getApplicationForUser()` - Get farmer application status
+- `getOrdersForFarmer()` - Get orders for farmer's products
+- `updateOrderStatus(orderId, status)` - Accept/Reject order
+- `deleteOrder(orderId)` - Delete order
+- `reduceProductStock(productId, quantity)` - Deduct stock
+- `deductStockForOrder(orderId)` - Deduct all items in order
+
+### Customer Operations
+- `getApprovedProducts()` - Get marketplace products
+- `addToCart(item)` - Add item to cart
+- `removeFromCart(productId)` - Remove from cart
+- `createOrder(items, totalPrice)` - Place order
+- `uploadProductImage(file)` - Upload image
+
+### Admin Operations
+- `getFarmerApplications()` - Get pending applications
+- `approveFarmerApplication(appId, location)` - Approve farmer
+- `rejectFarmerApplication(appId)` - Reject farmer
+- `approveProduct(productId)` - Approve product
+- `rejectProduct(productId)` - Reject product
+- `getAllProducts()` - Get all products
+- `getAllUsers()` - Get all users
+- `getAllOrders()` - Get all orders
+
+---
+
+## 14. User Flows
+
+### 14.1 Farmer Registration & Onboarding
+```
+1. User clicks "Register as Farmer"
+2. Enter email, password, role
+3. Submit farmer application with farm address & city
+4. Admin reviews application
+5. On approval: Can create products
+6. On rejection: Cannot proceed
+```
+
+### 14.2 Customer Purchase Flow
+```
+1. Browse marketplace
+2. Search by product name or location
+3. View product details
+4. Add to cart
+5. Update quantities if needed
+6. Proceed to checkout
+7. Place order
+8. Cart clears automatically
+9. Order status: pending (waiting for farmer acceptance)
+```
+
+### 14.3 Farmer Order Management
+```
+1. View incoming orders in dashboard
+2. See customer email and order details
+3. Accept order:
+   a. Stock deducted automatically
+   b. Order status changes to accepted
+4. OR Reject order:
+   a. Order status changes to rejected
+   b. Stock unchanged (customer can reorder)
+5. Can delete orders if needed
+```
+
+### 14.4 Admin Verification
+```
+1. View pending farmer applications
+2. Review farm details and location
+3. Approve → Farmer can list products
+4. Reject → Application closed
+5. View all products and approve/reject
+6. Monitor all orders and users
+```
+
+---
+
+## 15. Error Handling Strategy
+
+### Frontend
+- Try-catch blocks around all API calls
+- Toast notifications for errors
+- Custom Alert modals for critical errors
+- Form validation with error messages
+- Graceful loading states
+
+### Backend
+- SQL error handling with meaningful messages
+- RLS policy validation
+- Cascade delete for data integrity
+- Location query fallbacks (profile + applications)
+- Prevents 400 errors when data is missing
+
+---
+
+## 16. Testing Scenarios
+
+### 16.1 Farmer Tests
+- ✅ Register and submit application
+- ✅ Create product with image
+- ✅ Update product details
+- ✅ Delete product
+- ✅ Accept order and verify stock deduction
+- ✅ Reject order and verify stock unchanged
+
+### 16.2 Customer Tests
+- ✅ Search products by name
+- ✅ Filter products by location
+- ✅ Add multiple items to cart
+- ✅ Place order and see confirmation
+- ✅ Verify cart clears after order
+- ✅ View updated stock in marketplace
+
+### 16.3 Admin Tests
+- ✅ Approve farmer application
+- ✅ Approve/Reject products
+- ✅ View all users and orders
+- ✅ Monitor product statuses
+
+---
+
+## 17. Known Limitations & Design Decisions
+
+1. **No Customer Order History** - As per original PRD requirement
+2. **Stock Can Go Negative** - Handled gracefully (Math.max(0, stock))
+3. **No Concurrent Order Locking** - App assumes low-concurrency scenario
+4. **No Email Notifications** - Only in-app notifications implemented
+5. **Cart in Context** - Not persisted to database (intent matches PRD's simplicity)
+6. **Single Admin Account** - Not multi-admin system
+7. **No Payment Integration** - Not required by PRD (order = purchase intent)
+
+---
+
+## 18. Deployment Checklist
+
+- ✅ Environment variables configured
+- ✅ Supabase RLS policies enabled
+- ✅ Database migrations applied
+- ✅ Storage permissions configured
+- ✅ Error handling in place
+- ✅ TypeScript strict mode enabled
+- ✅ Build optimizations applied
+- ✅ Security headers configured
+
+---
+
+## 19. Future Enhancement Possibilities
+
+1. **Payment Gateway Integration** (Stripe, Khalti, etc.)
+2. **Email Notifications** on order status changes
+3. **Customer Order History** page with tracking
+4. **Rating & Review System** for products
+5. **Farmer Analytics** dashboard
+6. **Bulk Upload** for products
+7. **SMS Notifications** to farmers
+8. **Mobile App** version
+9. **Real-time Chat** between farmers and customers
+10. **Seasonal Products** and inventory forecasting
+
+---
+
+## 20. Project Completion Status
+
+| Component | Status | Notes |
+|---|---|---|
+| Frontend UI | ✅ Complete | All pages built and styled |
+| Authentication | ✅ Complete | Supabase Auth integrated |
+| Farmer Features | ✅ Complete | Product CRUD + order management |
+| Customer Features | ✅ Complete | Browse, search, filter, order |
+| Admin Features | ✅ Complete | Applications, products, users, orders |
+| Database Schema | ✅ Complete | All tables with RLS policies |
+| Stock Management | ✅ Complete | Kg units + auto deduction |
+| Location System | ✅ Complete | City-based filtering and display |
+| Error Handling | ✅ Complete | Try-catch throughout |
+| Notifications | ✅ Complete | Toast + modals |
+| Testing | ✅ Tested | All major flows verified |
+| Documentation | ✅ Complete | Code comments + this PRD |
+
+**Overall Status**: 🟢 **PRODUCTION READY**
+
+---
+
+## 21. Technology Versions
+
+- React: 18.x
+- TypeScript: 5.x
+- Vite: 5.x
+- Tailwind CSS: 3.x
+- Supabase: Latest
+- Node.js: 18+
+
+---
+
+## 22. Conclusion
+
+GreenBasket successfully implements all PRD requirements with additional enhancements for real-world usability. The platform provides a secure, scalable, user-friendly marketplace for farmers and customers, with comprehensive admin oversight. The codebase is well-structured, maintainable, and ready for deployment.
+
+**Project Completion Date**: February 18, 2026  
+**Total Development Time**: ~2 weeks  
+**Ready for**: Production deployment, College submission, User testing
