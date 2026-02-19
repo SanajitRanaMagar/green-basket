@@ -650,6 +650,305 @@ orders (1) ──→ (∞) order_items
 
 ---
 
+## 22. Presentation Topics & Slide Content
+
+### Slide 1: Title Slide
+**Topic**: GreenBasket - Farmer to Consumer Marketplace  
+**Description**: Project title with GreenBasket logo, tagline "Fresh • Local • Organic", team name, and date. Sets the professional tone for the presentation.
+
+### Slide 2: Problem Statement
+**Topic**: The Gap in Agricultural Markets  
+**Description**: Highlight three main problems:
+- Farmers earn only 30-40% of retail price due to middlemen
+- Consumers pay premium prices for basic produce
+- No direct, trusted digital platform connecting them
+- Traditional markets lack online accessibility and transparency
+
+### Slide 3: Solution Overview
+**Topic**: GreenBasket - Direct Marketplace Platform  
+**Description**: Introduce the solution as:
+- A farmer-to-consumer online marketplace
+- Eliminates middlemen, reducing costs for both parties
+- Verified farmer accounts with quality control
+- Location-based product discovery
+- Real-time inventory management
+- Seamless ordering process
+
+### Slide 4: Project Goals & Objectives
+**Topic**: What We Aim to Achieve  
+**Description**: List the 6 key objectives:
+1. Enable farmers to list and manage products independently
+2. Provide customers location-based access to fresh products
+3. Maintain marketplace integrity through admin verification
+4. Implement secure, role-based access control
+5. Manage inventory with automatic stock deduction
+6. Deliver real-time user feedback and notifications
+
+### Slide 5: Target Users (User Personas)
+**Topic**: Who Benefits?  
+**Description**: Three distinct user groups:
+- **Farmers**: Small-to-medium producers wanting direct market access
+- **Customers**: Urban consumers seeking fresh, affordable options
+- **Admin**: Platform moderators ensuring quality and trust
+- Show age ranges, digital literacy levels, and key pain points for each
+
+### Slide 6: Key Features - Farmer Dashboard
+**Topic**: Farmer Product Management  
+**Description**: Showcase:
+- Create products with images, prices, and stock in kg
+- Track product approval status (pending/approved/rejected)
+- View and manage incoming customer orders
+- Accept/reject orders with automatic stock deduction
+- Real-time inventory monitoring
+- Product edit and delete capabilities
+
+### Slide 7: Key Features - Customer Marketplace
+**Topic**: Smart Product Discovery & Shopping  
+**Description**: Demonstrate:
+- Browse all approved products in grid layout
+- Real-time product search by name
+- Location-based filtering to find local farmers
+- View product details: price, location (📍), available stock in kg
+- Add to cart and manage quantities
+- Checkout and order placement
+- Automatic cart clearing after purchase
+
+### Slide 8: Key Features - Admin Dashboard
+**Topic**: Marketplace Oversight & Control  
+**Description**: Illustrate admin capabilities:
+- Review and approve/reject farmer applications
+- Monitor and approve/reject product listings
+- View all users with role-based filters
+- Monitor all orders and order statuses
+- Track product approval workflows
+- Manage farmer verification status
+
+### Slide 9: Stock Management System
+**Topic**: Inventory in Kilograms (kg)  
+**Description**: Explain the automated stock management:
+- All stock quantities displayed and entered in kg units
+- Automatic stock deduction when farmer accepts an order
+- Prevents overselling (stock never goes negative)
+- Real-time stock updates across all user views
+- Prevents inventory discrepancies
+- Clear visibility for customers on availability
+
+### Slide 10: Location-Based Discovery
+**Topic**: Finding Fresh Products Near You  
+**Description**: Highlight location features:
+- Farmers specify their city during registration
+- Products display farmer's location with 📍 icon
+- Customers can filter and search by location
+- Real-time location search without page reload
+- Increases discoverability for local farmers
+- Supports customer preference for local sourcing
+
+### Slide 11: Order Management Pipeline
+**Topic**: From Order Placement to Fulfillment  
+**Description**: Show the complete order flow:
+1. Customer places order → creates order_items with quantities
+2. Farmer receives order notification in dashboard
+3. Farmer accepts order → stock deducted automatically from inventory
+4. OR Farmer rejects order → stock remains unchanged
+5. Order status updates in real-time
+6. Cart automatically clears after successful order
+
+### Slide 12: Authentication & Security
+**Topic**: Secure, Role-Based Access  
+**Description**: Technically explain:
+- Supabase Auth with JWT tokens for security
+- Role-based access control (RBAC): Farmer, Customer, Admin
+- Row Level Security (RLS) policies on all database tables
+- SQL injection prevention through parameterized queries
+- Email/password authentication with secure hashing
+- Protected routes based on user role
+- Session management and logout functionality
+
+### Slide 13: Database Architecture
+**Topic**: Data Model & Relationships  
+**Description**: Visualize:
+- Core tables: auth.users, profiles, farmer_applications, products, orders, order_items
+- Key relationships with entity diagrams
+- Foreign key constraints ensuring data integrity
+- JSONB fields for flexible data (farm_address with city)
+- Timestamp fields for audit trails
+- Status fields for workflow tracking
+
+### Slide 14: Tech Stack Overview
+**Topic**: Modern, Scalable Technology  
+**Description**: Showcase the choice of technologies:
+- **Frontend**: React 18 with TypeScript for robust UI
+- **Build Tool**: Vite for fast development and optimized bundles
+- **Styling**: Tailwind CSS for responsive design
+- **Backend**: Supabase PostgreSQL for reliability
+- **Authentication**: Supabase Auth for security
+- **Storage**: Supabase Storage for product images
+- **State Management**: Context API for clean architecture
+
+### Slide 15: Project Structure & Code Organization
+**Topic**: Clean, Maintainable Codebase  
+**Description**: Show folder structure:
+- `/components` - Reusable UI components (Navbar)
+- `/pages` - Route pages (Login, Register, Farmer DB, Customer, Admin)
+- `/context` - 7 Context providers for state management
+- `/services` - API calls and Supabase integration
+- `/db` - SQL migrations for schema management
+- Demonstrates separation of concerns and scalability
+
+### Slide 16: API Functions Summary
+**Topic**: Backend Operations  
+**Description**: Categorize key API functions:
+- **Authentication**: signUp, login, logout, getCurrentUser
+- **Farmer Ops**: createProduct, updateProduct, deleteProduct, getOrdersForFarmer
+- **Customer Ops**: getApprovedProducts, addToCart, createOrder, checkout
+- **Admin Ops**: approveFarmer, approveProduct, getAllUsers, getAllOrders
+- **Special**: reduceProductStock, deductStockForOrder, uploadProductImage
+
+### Slide 17: Farmer Application Workflow
+**Topic**: Verification Process  
+**Description**: Illustrate the farmer onboarding:
+1. New farmer registers with email and password
+2. Submits farm application with address and city details
+3. Application enters "pending" status
+4. Admin reviews application in "Farmer Applications" page
+5. On Approval: City saved to profile, farmer can create products
+6. On Rejection: Application closed, farmer cannot list products
+7. Ensures only verified farmers appear on marketplace
+
+### Slide 18: Product Approval Workflow
+**Topic**: Quality Control & Marketplace Integrity  
+**Description**: Show product lifecycle:
+1. Farmer creates product → status: "pending"
+2. Product hidden from customers until approval
+3. Admin reviews product details and image
+4. On Approval: Product visible on marketplace to all customers
+5. On Rejection: Product removed, farmer notified
+6. Prevents false or inappropriate listings
+7. Maintains marketplace trust and quality
+
+### Slide 19: Notification System
+**Topic**: Real-Time User Feedback  
+**Description**: Explain notification types:
+- **Toast Notifications**: Success, error, and info messages
+- **Custom Alert Modals**: Critical confirmations
+- **Form Validation**: Real-time feedback on input errors
+- **Order Notifications**: Farmer receives order alerts
+- **Status Updates**: Customers see order status changes
+- **Stock Alerts**: Low inventory warnings
+- Improves user experience with immediate feedback
+
+### Slide 20: Error Handling & Reliability
+**Topic**: Graceful Degradation & Robustness  
+**Description**: Detail error management:
+- Try-catch blocks around all API calls
+- Meaningful error messages to users
+- Fallback mechanisms for location data
+- Prevents crashes from partial data failures
+- Validation on both frontend and backend
+- Database constraints ensure data integrity
+- Logging for debugging and monitoring
+
+### Slide 21: Security Measures
+**Topic**: Privacy & Data Protection  
+**Description**: Outline security layers:
+- JWT token-based authentication
+- Row Level Security (RLS) policies on all tables
+- Farmers only see their own products
+- Customers only see public products and own cart
+- Secure image upload with storage rules
+- No exposure of sensitive data in error messages
+- CSRF protection via Supabase
+- Secure session management
+
+### Slide 22: Testing & Quality Assurance
+**Topic**: Verified Functionality  
+**Description**: Showcase testing coverage:
+- **Farmer Tests**: Registration, product creation, order management, stock deduction
+- **Customer Tests**: Search, filter, cart, checkout, order placement
+- **Admin Tests**: Application approval, product approval, user management
+- Users flows tested end-to-end
+- Cross-browser compatibility verified
+- Performance optimization applied
+
+### Slide 23: Deployment & Hosting
+**Topic**: Production-Ready Infrastructure  
+**Description**: Explain deployment strategy:
+- **Frontend**: Ready for Vercel/Netlify deployment
+- **Backend**: Hosted on Supabase cloud infrastructure
+- **Database**: PostgreSQL with auto-backups
+- **Images**: Served via Supabase CDN
+- **Environment**: Development and production configs
+- **Scaling**: Automatic scaling handled by Supabase
+- **Monitoring**: Logs and error tracking
+
+### Slide 24: Project Completion Status
+**Topic**: What's Done, What's Ready  
+**Description**: Completion checklist:
+- ✅ Frontend UI - All pages built and styled
+- ✅ Authentication - Secure login/registration
+- ✅ Farmer Features - Complete CRUD + order management
+- ✅ Customer Features - Browse, search, filter, order
+- ✅ Admin Features - Approvals and oversight
+- ✅ Database - All tables with RLS policies
+- ✅ Stock Management - Kg units + auto deduction
+- ✅ **Overall: 🟢 PRODUCTION READY**
+
+### Slide 25: Key Achievements & Highlights
+**Topic**: Why This Project Stands Out  
+**Description**: Emphasize achievements:
+- Built a complete, functional marketplace in 2 weeks
+- Exceeded original PRD requirements
+- Real location-based discovery (not in original PRD)
+- Automatic stock management with kg units
+- 95%+ PRD alignment with smart enhancements
+- Clean, maintainable TypeScript codebase
+- Enterprise-grade security with RLS
+- Scalable architecture ready for growth
+
+### Slide 26: Known Limitations & Future Roadmap
+**Topic**: What We Didn't Build & What's Next  
+**Description**: Be transparent about scope:
+- **Not Included**: Payment gateway, email notifications, customer order history (per PRD)
+- **Future Enhancements**: 
+  - Stripe/Khalti payment integration
+  - SMS notifications to farmers
+  - Rating & review system
+  - Mobile app version
+  - Seasonal product forecasting
+  - Real-time chat between farmers and customers
+
+### Slide 27: Business Impact & ROI
+**Topic**: Real-World Benefits  
+**Description**: Quantify the value:
+- **For Farmers**: Eliminate middlemen markup (20-70% savings)
+- **For Customers**: 30-40% cheaper than retail
+- **For Market**: Direct relationship increases brand loyalty
+- **Scalability**: Can onboard 1000s of farmers and customers
+- **Retention**: Direct connection increases repeat purchases
+- **Sustainability**: Reduces supply chain waste
+
+### Slide 28: Conclusion & Call to Action
+**Topic**: Summary & Next Steps  
+**Description**: Wrap up with:
+- GreenBasket successfully solves the farmer-consumer gap
+- Production-ready platform with secure, scalable architecture
+- Exceeds college project requirements
+- Ready for deployment and real-world testing
+- Next steps: User feedback, payment integration, scaling
+- Thank you slide with team information
+
+### Slide 29: Q&A
+**Topic**: Questions & Discussion  
+**Description**: Open floor for questions from audience about:
+- Technical implementation details
+- Business model and sustainability
+- Feature roadmap and future plans
+- Security and data privacy
+- Deployment and hosting strategy
+- User feedback and improvements
+
+---
+
 ## 22. Conclusion
 
 GreenBasket successfully implements all PRD requirements with additional enhancements for real-world usability. The platform provides a secure, scalable, user-friendly marketplace for farmers and customers, with comprehensive admin oversight. The codebase is well-structured, maintainable, and ready for deployment.
