@@ -3,6 +3,11 @@ import { Product, CartItem, Order, OrderItem, Profile, FarmerApplication } from 
 
 // --- Products ---
 
+// Cache for approved products to avoid redundant queries
+let cachedProducts: Product[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 30000; // 30 seconds
+
 export const getApprovedProducts = async (category?: string, search?: string, location?: string) => {
   // Fetch products with their creator info
   let query = supabase
@@ -24,28 +29,26 @@ export const getApprovedProducts = async (category?: string, search?: string, lo
   let farmerData: Record<string, any> = {};
   if (farmerIds.length > 0) {
     try {
-      // First try to get from profiles
-      const { data: farmers, error: farmerError } = await supabase
-        .from('profiles')
-        .select('id, city, email')
-        .in('id', farmerIds);
+      // Fetch farmer profiles and applications IN PARALLEL (not sequentially)
+      const [{ data: farmers, error: farmerError }, { data: apps, error: appError }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, city, email')
+          .in('id', farmerIds),
+        supabase
+          .from('farmer_applications')
+          .select('user_id, farm_address, status')
+          .in('user_id', farmerIds)
+      ]);
       
+      // Map profile data
       if (!farmerError && farmers) {
         farmers.forEach((f: any) => {
           farmerData[f.id] = f;
         });
       }
-    } catch (err) {
-      console.warn('Error fetching farmer profiles for location:', err);
-    }
-    
-    try {
-      // Also fetch from farmer_applications (all statuses) to get location from applications
-      const { data: apps, error: appError } = await supabase
-        .from('farmer_applications')
-        .select('user_id, farm_address, status')
-        .in('user_id', farmerIds);
       
+      // Merge application locations
       if (!appError && apps) {
         apps.forEach((app: any) => {
           // Use application location if profile doesn't have city
@@ -56,7 +59,7 @@ export const getApprovedProducts = async (category?: string, search?: string, lo
         });
       }
     } catch (err) {
-      console.warn('Error fetching farmer applications for location:', err);
+      console.warn('Error fetching farmer data:', err);
     }
   }
 
@@ -74,6 +77,71 @@ export const getApprovedProducts = async (category?: string, search?: string, lo
   }
 
   return result as Product[];
+};
+
+// New optimized function to load all approved products once (for caching)
+export const getAllApprovedProductsWithLocations = async () => {
+  const now = Date.now();
+  if (cachedProducts && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedProducts;
+  }
+
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('status', 'approved');
+  
+  if (error) throw error;
+  if (!products || products.length === 0) {
+    cachedProducts = [];
+    cacheTimestamp = now;
+    return [];
+  }
+
+  // Fetch farmer data in parallel
+  const farmerIds = Array.from(new Set(products.map((p: any) => p.created_by).filter(Boolean)));
+  let farmerData: Record<string, any> = {};
+  
+  if (farmerIds.length > 0) {
+    try {
+      const [{ data: farmers }, { data: apps }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, city, email')
+          .in('id', farmerIds),
+        supabase
+          .from('farmer_applications')
+          .select('user_id, farm_address, status')
+          .in('user_id', farmerIds)
+      ]);
+      
+      if (farmers) {
+        farmers.forEach((f: any) => {
+          farmerData[f.id] = f;
+        });
+      }
+      
+      if (apps) {
+        apps.forEach((app: any) => {
+          if (!farmerData[app.user_id]?.city && app.farm_address?.city) {
+            if (!farmerData[app.user_id]) farmerData[app.user_id] = {};
+            farmerData[app.user_id].city = app.farm_address.city;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('Error fetching farmer data:', err);
+    }
+  }
+
+  const result = products.map((p: any) => ({
+    ...p,
+    location: p.location || farmerData[p.created_by]?.city || 'Unknown Location'
+  }));
+
+  cachedProducts = result as Product[];
+  cacheTimestamp = now;
+  return cachedProducts;
 };
 
 export const getFarmerProducts = async (farmerId: string) => {
@@ -795,29 +863,25 @@ export const getAllProducts = async () => {
   let farmerData: Record<string, any> = {};
   if (farmerIds.length > 0) {
     try {
-      // First try to get from profiles
-      const { data: farmers, error: farmerError } = await supabase
-        .from('profiles')
-        .select('id, city, email')
-        .in('id', farmerIds);
+      // Fetch profiles and applications IN PARALLEL
+      const [{ data: farmers }, { data: apps }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('id, city, email')
+          .in('id', farmerIds),
+        supabase
+          .from('farmer_applications')
+          .select('user_id, farm_address')
+          .in('user_id', farmerIds)
+      ]);
       
-      if (!farmerError && farmers) {
+      if (farmers) {
         farmers.forEach((f: any) => {
           farmerData[f.id] = f;
         });
       }
-    } catch (err) {
-      console.warn('Error fetching farmer profiles for location:', err);
-    }
-    
-    try {
-      // Also fetch from farmer_applications to get location from applications
-      const { data: apps, error: appError } = await supabase
-        .from('farmer_applications')
-        .select('user_id, farm_address')
-        .in('user_id', farmerIds);
       
-      if (!appError && apps) {
+      if (apps) {
         apps.forEach((app: any) => {
           if (!farmerData[app.user_id]?.city && app.farm_address?.city) {
             if (!farmerData[app.user_id]) farmerData[app.user_id] = {};
@@ -826,7 +890,7 @@ export const getAllProducts = async () => {
         });
       }
     } catch (err) {
-      console.warn('Error fetching farmer applications for location:', err);
+      console.warn('Error fetching farmer data for all products:', err);
     }
   }
 

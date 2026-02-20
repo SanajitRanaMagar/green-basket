@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getApprovedProducts } from '../../services/api';
+import { getAllApprovedProductsWithLocations } from '../../services/api';
 import { Product } from '../../types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -18,40 +18,62 @@ const Marketplace: React.FC = () => {
   const { addItem, addingIds } = useCart();
   const { profile } = useAuth();
 
+  // Load all products once on mount
   useEffect(() => {
-    loadProducts();
-  }, [category, location]); // Reload when category or location changes
-
-  // Auto-rotate carousel every 5 seconds
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % 5); // 5 banner images
-    }, 5000);
-    return () => clearInterval(timer);
+    const initializeMarketplace = async () => {
+      setLoading(true);
+      try {
+        const allProducts = await getAllApprovedProductsWithLocations();
+        setFeaturedProducts((allProducts || []).slice(0, 5));
+        const locations = Array.from(new Set((allProducts || []).map(p => p.location).filter(Boolean))) as string[];
+        setAvailableLocations(locations.sort());
+        // Apply initial filters
+        filterAndDisplayProducts(allProducts);
+      } catch (err) {
+        console.error(err);
+        setProducts([]);
+        setFeaturedProducts([]);
+        setAvailableLocations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initializeMarketplace();
   }, []);
 
-  const loadProducts = async () => {
-    setLoading(true);
-    try {
-      const data = await getApprovedProducts(category === 'All' ? '' : category, searchTerm, location);
-      setProducts(data || []);
-      
-      // Load featured products (first 5 approved products for carousel)
-      if (!category || category === 'All') {
-        const featured = await getApprovedProducts('', '', '');
-        setFeaturedProducts((featured || []).slice(0, 5));
-        setCarouselIndex(0);
-      }
-      
-      // Extract unique locations from all approved products
-      const allProducts = await getApprovedProducts('', '', '');
-      const locations = Array.from(new Set((allProducts || []).map(p => p.location).filter(Boolean))) as string[];
-      setAvailableLocations(locations.sort());
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+  // Filter products when category or location changes (in-memory)
+  useEffect(() => {
+    if (cachedAllProducts) {
+      filterAndDisplayProducts(cachedAllProducts);
     }
+  }, [category, location]);
+
+  // Store all products for in-memory filtering
+  const [cachedAllProducts, setCachedAllProducts] = useState<Product[]>([]);
+  
+  const filterAndDisplayProducts = (allProducts: Product[]) => {
+    setCachedAllProducts(allProducts);
+    let filtered = allProducts;
+
+    // Filter by category
+    if (category && category !== 'All') {
+      filtered = filtered.filter(p => p.category === category);
+    }
+
+    // Filter by location
+    if (location) {
+      filtered = filtered.filter(p => 
+        p.location.toLowerCase().includes(location.toLowerCase())
+      );
+    }
+
+    setProducts(filtered);
+    setCarouselIndex(0);
+  };
+
+  const loadProducts = async () => {
+    // This function is now deprecated but kept for backward compatibility
+    // Actual loading is done in useEffect
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -59,20 +81,23 @@ const Marketplace: React.FC = () => {
     // Clear location filters when searching for products
     setLocation('');
     setLocationInput('');
-    // Search only by product name and category, ignoring location
-    loadProductsBySearch();
-  };
+    // Search using cached products (in-memory) - no API call needed
+    let filtered = cachedAllProducts;
 
-  const loadProductsBySearch = async () => {
-    setLoading(true);
-    try {
-      const data = await getApprovedProducts(category === 'All' ? '' : category, searchTerm, '');
-      setProducts(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    // Filter by search term (name, description)
+    if (searchTerm) {
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      );
     }
+
+    // Filter by category
+    if (category && category !== 'All') {
+      filtered = filtered.filter(p => p.category === category);
+    }
+
+    setProducts(filtered);
   };
 
   const handleLocationSearch = (e: React.FormEvent) => {
