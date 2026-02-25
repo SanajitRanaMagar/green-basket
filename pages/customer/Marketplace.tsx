@@ -28,7 +28,8 @@ const Marketplace: React.FC = () => {
         const locations = Array.from(new Set((allProducts || []).map(p => p.location).filter(Boolean))) as string[];
         setAvailableLocations(locations.sort());
         // Apply initial filters
-        filterAndDisplayProducts(allProducts);
+        setCachedAllProducts(allProducts || []);
+        applyAllFilters(allProducts || [], searchTerm, category, location);
       } catch (err) {
         console.error(err);
         setProducts([]);
@@ -41,34 +42,47 @@ const Marketplace: React.FC = () => {
     initializeMarketplace();
   }, []);
 
-  // Filter products when category or location changes (in-memory)
+  // Filter products when search term, category, or location changes (in-memory)
   useEffect(() => {
-    if (cachedAllProducts) {
-      filterAndDisplayProducts(cachedAllProducts);
+    if (cachedAllProducts.length > 0) {
+      applyAllFilters(cachedAllProducts, searchTerm, category, location);
     }
-  }, [category, location]);
+  }, [searchTerm, category, location]);
 
   // Store all products for in-memory filtering
   const [cachedAllProducts, setCachedAllProducts] = useState<Product[]>([]);
   
-  const filterAndDisplayProducts = (allProducts: Product[]) => {
-    setCachedAllProducts(allProducts);
+  // Apply all active filters together (search + category + location)
+  const applyAllFilters = (allProducts: Product[], search: string, selectedCategory: string, selectedLocation: string) => {
     let filtered = allProducts;
 
-    // Filter by category
-    if (category && category !== 'All') {
-      filtered = filtered.filter(p => p.category === category);
+    // Filter by search term (name or description)
+    if (search) {
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        (p.description?.toLowerCase().includes(search.toLowerCase()) ?? false)
+      );
     }
 
-    // Filter by location
-    if (location) {
+    // Filter by category
+    if (selectedCategory && selectedCategory !== 'All') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    // Filter by location - EXACT MATCH (case-insensitive)
+    if (selectedLocation) {
       filtered = filtered.filter(p => 
-        p.location.toLowerCase().includes(location.toLowerCase())
+        p.location.toLowerCase() === selectedLocation.toLowerCase()
       );
     }
 
     setProducts(filtered);
     setCarouselIndex(0);
+  };
+
+  const filterAndDisplayProducts = (allProducts: Product[]) => {
+    setCachedAllProducts(allProducts);
+    applyAllFilters(allProducts, searchTerm, category, location);
   };
 
   const loadProducts = async () => {
@@ -78,32 +92,15 @@ const Marketplace: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Clear location filters when searching for products
-    setLocation('');
-    setLocationInput('');
-    // Search using cached products (in-memory) - no API call needed
-    let filtered = cachedAllProducts;
-
-    // Filter by search term (name, description)
-    if (searchTerm) {
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-      );
-    }
-
-    // Filter by category
-    if (category && category !== 'All') {
-      filtered = filtered.filter(p => p.category === category);
-    }
-
-    setProducts(filtered);
+    // Apply all filters including search term (don't clear location)
+    applyAllFilters(cachedAllProducts, searchTerm, category, location);
   };
 
   const handleLocationSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Location filtering happens when Enter is pressed
+    // Set exact location and apply all filters (search term is maintained)
     setLocation(locationInput);
+    applyAllFilters(cachedAllProducts, searchTerm, category, locationInput);
   };
 
   const categories = ['All', 'Vegetables', 'Fruits'];
@@ -211,34 +208,71 @@ const Marketplace: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-800">Fresh from the Farm</h1>
           <p className="text-gray-600">Support local farmers directly.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <form onSubmit={handleSearch} className="relative flex-1 sm:flex-none">
-            <input 
-              type="text" 
-              placeholder="Search items..." 
-              className="pl-10 pr-4 py-2 border rounded-md focus:ring-primary focus:border-primary w-full sm:w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-          </form>
-          <select 
-            className="px-4 py-2 border rounded-md bg-white"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-          <form onSubmit={handleLocationSearch} className="relative flex-1 sm:flex-none">
-            <input 
-              type="text" 
-              placeholder="Search location..." 
-              className="pl-10 pr-4 py-2 border rounded-md focus:ring-primary focus:border-primary w-full sm:w-64"
-              value={locationInput}
-              onChange={(e) => setLocationInput(e.target.value)}
-            />
-            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-          </form>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleSearch} className="relative flex-1 sm:flex-none">
+              <input 
+                type="text" 
+                placeholder="Search items (e.g., potato)..." 
+                className="pl-10 pr-4 py-2 border rounded-md focus:ring-primary focus:border-primary w-full sm:w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
+            </form>
+            <select 
+              className="px-4 py-2 border rounded-md bg-white"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+            <form onSubmit={handleLocationSearch} className="relative flex-1 sm:flex-none">
+              <input 
+                type="text" 
+                placeholder="Search location..." 
+                className="pl-10 pr-4 py-2 border rounded-md focus:ring-primary focus:border-primary w-full sm:w-64"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+              />
+              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
+            </form>
+          </div>
+          
+          {/* Active Filters Display & Clear Button */}
+          {(searchTerm || category !== 'All' || location) && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+              <span className="text-gray-600">Active filters:</span>
+              <div className="flex flex-wrap gap-2">
+                {searchTerm && (
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                    Product: {searchTerm}
+                  </span>
+                )}
+                {category && category !== 'All' && (
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                    Category: {category}
+                  </span>
+                )}
+                {location && (
+                  <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
+                    Location: {location}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setCategory('All');
+                  setLocation('');
+                  setLocationInput('');
+                }}
+                className="text-red-600 hover:text-red-800 font-medium text-xs ml-auto sm:ml-2 underline"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
