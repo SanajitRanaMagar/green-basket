@@ -10,6 +10,7 @@ import { AlertProvider } from './context/AlertContext';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Marketplace from './pages/customer/Marketplace';
 import CustomerDashboard from './pages/customer/Dashboard';
 import Cart from './pages/customer/Cart';
@@ -71,6 +72,7 @@ const App: React.FC = () => {
                       {/* Public Routes */}
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Register />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
                       
                       {/* Home serves as Marketplace for customers */}
                       <Route path="/" element={<Marketplace />} />
