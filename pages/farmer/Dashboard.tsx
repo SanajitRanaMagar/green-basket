@@ -132,6 +132,57 @@ const FarmerDashboard: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation - Check for missing fields
+    if (!name.trim()) {
+      alert({
+        title: 'Missing Product Name',
+        message: 'Please enter a product name.',
+        type: 'danger',
+      });
+      return;
+    }
+
+    if (!description.trim()) {
+      alert({
+        title: 'Missing Description',
+        message: 'Please enter a product description.',
+        type: 'danger',
+      });
+      return;
+    }
+
+    if (!price || parseFloat(price) <= 0) {
+      alert({
+        title: 'Invalid Price',
+        message: 'Please enter a valid price greater than 0.',
+        type: 'danger',
+      });
+      return;
+    }
+
+    if (!stock || parseInt(stock) <= 0) {
+      alert({
+        title: 'Invalid Stock Quantity',
+        message: 'Please enter a valid stock quantity greater than 0 kg.',
+        type: 'danger',
+      });
+      return;
+    }
+
+    // Image validation - Check if image is provided
+    const hasExistingImage = editingProduct?.image_url;
+    const hasNewImage = imageFile !== null;
+
+    if (!hasExistingImage && !hasNewImage) {
+      alert({
+        title: 'Missing Product Image',
+        message: 'Please upload a product image before saving.',
+        type: 'danger',
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       let imageUrl = editingProduct?.image_url || null;
@@ -322,7 +373,7 @@ const FarmerDashboard: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea className="w-full border rounded px-3 py-2" value={description} onChange={e => setDescription(e.target.value)} />
+                <textarea required className="w-full border rounded px-3 py-2" placeholder="Enter product description" value={description} onChange={e => setDescription(e.target.value)} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -342,12 +393,14 @@ const FarmerDashboard: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Image <span className="text-red-500">*</span> {editingProduct && '(optional - upload to change)'}
+                </label>
                 <div className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-gray-50 relative">
                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setImageFile(e.target.files?.[0] || null)} />
                    <div className="flex flex-col items-center text-gray-500">
                      <Upload className="w-8 h-8 mb-2" />
-                     <span className="text-sm">{imageFile ? imageFile.name : 'Click to upload image'}</span>
+                     <span className="text-sm">{imageFile ? imageFile.name : (!editingProduct || !editingProduct.image_url ? 'Click to upload image (required)' : 'Click to upload new image or leave empty')}</span>
                    </div>
                 </div>
               </div>
